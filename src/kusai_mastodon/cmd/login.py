@@ -7,7 +7,7 @@ app = typer.Typer()
 
 
 @app.command()
-def login(ctx: typer.Context):
+def login(ctx: typer.Context, force: bool = False):
     for name, user_config in ctx.obj.config.users.items():
         user_state = ctx.obj.state.users[name]
         client = create_mastodon_client(user_config.instance, user_state.instance)
@@ -16,8 +16,10 @@ def login(ctx: typer.Context):
 
         try:
             client.preferences()
-            typer.secho("Already authorized", fg=typer.colors.GREEN)
-            continue
+
+            if not force:
+                typer.secho("Already authorized", fg=typer.colors.GREEN)
+                continue
         except MastodonUnauthorizedError:
             pass
 

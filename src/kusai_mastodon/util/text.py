@@ -15,6 +15,9 @@ def unwrap_chain_text(text: str) -> str:
 def sanitize_status_content(content: str) -> str:
     soup = BeautifulSoup(content, "html.parser")
 
+    for tag in soup.find_all(class_="gts-system-message"):
+        tag.decompose()
+
     for a in soup.find_all("a"):
         classes = a.get("class", [])
         if "mention" in classes or "hashtag" in classes:
