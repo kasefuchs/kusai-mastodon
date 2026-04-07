@@ -41,7 +41,7 @@ def train(ctx: typer.Context):
                     if statuses:
                         user_state.progress.since_id = statuses[0].id
                         user_state.progress.max_id = statuses[-1].id
-                        user_state.textchain.train(_encode_statuses(statuses))
+                        user_state.chain.train(_encode_statuses(statuses))
 
                         progress.update(task, advance=len(statuses))
 
@@ -57,7 +57,7 @@ def train(ctx: typer.Context):
                             break
 
                         user_state.progress.since_id = statuses[0].id
-                        user_state.textchain.train(_encode_statuses(statuses))
+                        user_state.chain.train(_encode_statuses(statuses))
 
                         progress.update(task, advance=len(statuses))
 
@@ -73,7 +73,7 @@ def train(ctx: typer.Context):
                             break
 
                         user_state.progress.max_id = statuses[-1].id
-                        user_state.textchain.train(_encode_statuses(statuses))
+                        user_state.chain.train(_encode_statuses(statuses))
 
                         progress.update(task, advance=len(statuses))
 

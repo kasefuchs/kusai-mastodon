@@ -1,6 +1,10 @@
-from bs4 import BeautifulSoup
+from typing import Optional
 
-from kusai_mastodon.model import Marker
+from bs4 import BeautifulSoup
+from kusai import TextChain
+
+from kusai_mastodon.model.enum import Marker
+from kusai_mastodon.model.config import GenerateConfig
 
 
 def wrap_chain_text(text: str) -> str:
@@ -26,3 +30,17 @@ def sanitize_status_content(content: str) -> str:
             a.replace_with(a.get("href", ""))
 
     return soup.get_text(separator=" ", strip=True)
+
+
+def generate_status_content(
+    textchain: TextChain, config: GenerateConfig
+) -> Optional[str]:
+    for _ in range(config.retries):
+        candidate = unwrap_chain_text(
+            textchain.generate_text(Marker.STX.value, limit=config.limit)
+        )
+
+        if config.min_words <= len(candidate.split()) <= config.max_words:
+            return candidate
+
+    return None

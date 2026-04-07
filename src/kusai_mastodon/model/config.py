@@ -8,10 +8,34 @@ from kusai import AbstractSerializable
 
 
 @dataclass
-class PostConfig(AbstractSerializable):
-    retries: int = field(default=250)
+class GenerateConfig(AbstractSerializable):
+    limit: int = field(default=25)
+    retries: int = field(default=100)
     min_words: int = field(default=2)
     max_words: int = field(default=20)
+
+    def __post_init__(self):
+        super().__init__()
+
+    def serialize(self) -> Dict:
+        return {
+            "limit": self.limit,
+            "retries": self.retries,
+            "min_words": self.min_words,
+            "max_words": self.max_words,
+        }
+
+    def deserialize(self, data: Dict) -> bool:
+        self.limit = data["limit"]
+        self.retries = data["retries"]
+        self.min_words = data["min_words"]
+        self.max_words = data["max_words"]
+        return True
+
+
+@dataclass
+class StatusConfig(AbstractSerializable):
+    generate: GenerateConfig = field(default_factory=GenerateConfig)
     visibility: str = field(default="unlisted")
 
     def __post_init__(self):
@@ -19,41 +43,13 @@ class PostConfig(AbstractSerializable):
 
     def serialize(self) -> Dict:
         return {
-            "retries": self.retries,
-            "min_words": self.min_words,
-            "max_words": self.max_words,
+            "generate": self.generate.serialize(),
             "visibility": self.visibility,
         }
 
     def deserialize(self, data: Dict) -> bool:
-        self.retries = data["retries"]
-        self.min_words = data["min_words"]
-        self.max_words = data["max_words"]
         self.visibility = data["visibility"]
-        return True
-
-
-@dataclass
-class TrainConfig(AbstractSerializable):
-    source: str = field(default_factory=str)
-    exclude_replies: bool = field(default=True)
-    exclude_reblogs: bool = field(default=True)
-
-    def __post_init__(self):
-        super().__init__()
-
-    def serialize(self) -> Dict:
-        return {
-            "source": self.source,
-            "exclude_replies": self.exclude_replies,
-            "exclude_reblogs": self.exclude_reblogs,
-        }
-
-    def deserialize(self, data: Dict) -> bool:
-        self.source = data["source"]
-        self.exclude_replies = data["exclude_replies"]
-        self.exclude_reblogs = data["exclude_reblogs"]
-        return True
+        return self.generate.deserialize(data["generate"])
 
 
 @dataclass
@@ -71,6 +67,31 @@ class TextChainConfig(AbstractSerializable):
     def deserialize(self, data: Dict) -> bool:
         self.max_context_size = data["max_context_size"]
         return True
+
+
+@dataclass
+class TrainConfig(AbstractSerializable):
+    source: str = field(default_factory=str)
+    exclude_replies: bool = field(default=True)
+    exclude_reblogs: bool = field(default=True)
+    chain: TextChainConfig = field(default_factory=TextChainConfig)
+
+    def __post_init__(self):
+        super().__init__()
+
+    def serialize(self) -> Dict:
+        return {
+            "source": self.source,
+            "exclude_replies": self.exclude_replies,
+            "exclude_reblogs": self.exclude_reblogs,
+            "chain": self.chain.serialize(),
+        }
+
+    def deserialize(self, data: Dict) -> bool:
+        self.source = data["source"]
+        self.exclude_replies = data["exclude_replies"]
+        self.exclude_reblogs = data["exclude_reblogs"]
+        return self.chain.deserialize(data["chain"])
 
 
 @dataclass
@@ -101,10 +122,10 @@ class InstanceConfig(AbstractSerializable):
 
 @dataclass
 class UserConfig(AbstractSerializable):
-    post: PostConfig = field(default_factory=PostConfig)
+    post: StatusConfig = field(default_factory=StatusConfig)
+    reply: StatusConfig = field(default_factory=StatusConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
     instance: InstanceConfig = field(default_factory=InstanceConfig)
-    textchain: TextChainConfig = field(default_factory=TextChainConfig)
 
     def __post_init__(self):
         super().__init__()
@@ -114,7 +135,6 @@ class UserConfig(AbstractSerializable):
             "post": self.post.serialize(),
             "train": self.train.serialize(),
             "instance": self.instance.serialize(),
-            "textchain": self.textchain.serialize(),
         }
 
     def deserialize(self, data: Dict) -> bool:
@@ -122,7 +142,6 @@ class UserConfig(AbstractSerializable):
         success &= self.post.deserialize(data["post"])
         success &= self.train.deserialize(data["train"])
         success &= self.instance.deserialize(data["instance"])
-        success &= self.textchain.deserialize(data["textchain"])
         return success
 
 

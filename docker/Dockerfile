@@ -32,6 +32,9 @@ RUN mkdir -p $VCPKG_ROOT && cd $VCPKG_ROOT && \
 ENV PATH=${VCPKG_ROOT}:${PATH}
 ENV CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 
+# generate vcpkg stub overlays
+RUN vcpkg-stub-overlay.sh abseil cli11 nlohmann-json pybind11
+
 # build app
 WORKDIR /app
 
