@@ -24,7 +24,4 @@ def post(ctx: typer.Context, dry_run: bool = False):
 
                 typer.secho(f"Successfully posted: {status.url}", fg=typer.colors.GREEN)
         else:
-            typer.secho(
-                f"Failed to generate post content",
-                fg=typer.colors.RED,
-            )
+            typer.secho(f"Failed to generate post content", fg=typer.colors.RED)

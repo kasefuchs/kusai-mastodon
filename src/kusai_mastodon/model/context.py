@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 import json
 from dataclasses import dataclass
+from typing import Self
 from pathlib import Path
 
 import yaml
@@ -16,22 +15,23 @@ class Context:
     state: State
 
     @classmethod
-    def load(cls, config_path: Path) -> Context:
-        config = Config()
-        with open(config_path, "rb") as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-            config.deserialize(data)
+    def load(cls, config_path: Path) -> Self:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config_data = yaml.safe_load(f) or {}
 
-        state = State.build(config)
+        config = Config.model_validate(config_data)
+
+        state_data = {}
         try:
-            with open(config.state_path, "r") as f:
-                data = json.load(f)
-                state.deserialize(data)
+            with open(config.state_path, "r", encoding="utf-8") as f:
+                state_data = json.load(f)
         except FileNotFoundError:
             pass
+
+        state = State.model_validate(state_data, context={"config": config})
 
         return cls(config, state)
 
     def save(self):
-        with open(self.config.state_path, "w") as f:
-            json.dump(self.state.serialize(), f)
+        with open(self.config.state_path, "w", encoding="utf-8") as f:
+            json.dump(self.state.model_dump(), f)
