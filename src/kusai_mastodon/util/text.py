@@ -32,13 +32,9 @@ def sanitize_status_content(content: str) -> str:
     return soup.get_text(separator=" ", strip=True)
 
 
-def generate_status_content(
-    textchain: TextChain, config: GenerateConfig
-) -> Optional[str]:
+def generate_status_content(textchain: TextChain, config: GenerateConfig) -> Optional[str]:
     for _ in range(config.retries):
-        candidate = unwrap_chain_text(
-            textchain.generate_text(Marker.STX.value, limit=config.limit)
-        )
+        candidate = unwrap_chain_text(textchain.generate_text(Marker.STX.value, limit=config.limit))
 
         if config.min_words <= len(candidate.split()) <= config.max_words:
             return candidate

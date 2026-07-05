@@ -80,9 +80,7 @@ class UserState(AbstractSerializable):
     @staticmethod
     def build(config: UserConfig) -> UserState:
         graph = MemoryGraph()
-        markov = BackoffMarkov(
-            graph, max_context_size=config.train.chain.max_context_size
-        )
+        markov = BackoffMarkov(graph, max_context_size=config.train.chain.max_context_size)
         tokenizer = SimpleTokenizer()
         chain = TextChain(markov, tokenizer)
 

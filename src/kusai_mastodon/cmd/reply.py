@@ -26,9 +26,7 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                 if notification.account.bot:
                     typer.secho("Skipping bot", fg=typer.colors.YELLOW)
                 else:
-                    content = generate_status_content(
-                        user_state.chain, user_config.reply.generate
-                    )
+                    content = generate_status_content(user_state.chain, user_config.reply.generate)
                     if content:
                         text = f"@{notification.account.acct} {content}"
                         typer.secho(f"Generated reply: {text}", fg=typer.colors.BLUE)

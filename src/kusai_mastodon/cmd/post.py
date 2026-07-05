@@ -20,9 +20,7 @@ def post(ctx: typer.Context, dry_run: bool = False):
         if content:
             typer.secho(f"Generated content: {content}", fg=typer.colors.BLUE)
             if not dry_run:
-                status = client.status_post(
-                    content, visibility=user_config.post.visibility
-                )
+                status = client.status_post(content, visibility=user_config.post.visibility)
 
                 typer.secho(f"Successfully posted: {status.url}", fg=typer.colors.GREEN)
         else:

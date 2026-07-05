@@ -24,13 +24,9 @@ def train(ctx: typer.Context):
         try:
             for name, user_config in ctx.obj.config.users.items():
                 user_state = ctx.obj.state.users[name]
-                client = create_mastodon_client(
-                    user_config.instance, user_state.instance
-                )
+                client = create_mastodon_client(user_config.instance, user_state.instance)
                 account = client.account_lookup(user_config.train.source)
-                task = progress.add_task(
-                    f"Training {name}", total=account.statuses_count
-                )
+                task = progress.add_task(f"Training {name}", total=account.statuses_count)
 
                 if not (user_state.progress.since_id and user_state.progress.max_id):
                     statuses = client.account_statuses(

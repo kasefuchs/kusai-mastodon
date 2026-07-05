@@ -28,11 +28,7 @@ def login(ctx: typer.Context, force: bool = False):
         typer.echo(f"If it didn’t open, visit: {auth_url}")
         typer.launch(auth_url)
 
-        access_code = typer.prompt(
-            typer.style("Enter access code", fg=typer.colors.YELLOW)
-        )
-        user_state.instance.access_token = client.log_in(
-            code=access_code, scopes=user_config.instance.scopes
-        )
+        access_code = typer.prompt(typer.style("Enter access code", fg=typer.colors.YELLOW))
+        user_state.instance.access_token = client.log_in(code=access_code, scopes=user_config.instance.scopes)
 
     ctx.obj.save()
