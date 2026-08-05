@@ -2,7 +2,9 @@ import json
 from dataclasses import dataclass
 from typing import Self
 from pathlib import Path
+from tempfile import mkstemp
 
+import os
 import yaml
 
 from .config import Config
@@ -33,5 +35,10 @@ class Context:
         return cls(config, state)
 
     def save(self):
-        with open(self.config.state_path, "w", encoding="utf-8") as f:
+        fd, path = mkstemp()
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(self.state.model_dump(), f)
+            f.flush()
+            os.fsync(f.fileno())
+
+        os.replace(path, self.config.state_path)
