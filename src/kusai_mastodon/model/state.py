@@ -1,4 +1,5 @@
-from typing import Dict, Optional, Any
+from typing import Optional, Any
+from adblock import Engine
 from pydantic import BaseModel, Field, ConfigDict, field_serializer, field_validator, ValidationInfo
 from mastodon.types_base import IdType
 
@@ -22,17 +23,20 @@ class ProgressState(BaseModel):
 
 class InstanceState(BaseModel):
     access_token: str = ""
+    client_id: str = ""
+    client_secret: str = ""
 
 
 class UserState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    chain: TextChain
+    chain: TextChain = Field(default=None, validate_default=True)
+    adblock: Engine = Field(default=None, exclude=True, validate_default=True)
     instance: InstanceState = Field(default_factory=InstanceState)
     progress: ProgressState = Field(default_factory=ProgressState)
 
     @field_serializer("chain")
-    def serialize_chain(self, chain: TextChain) -> Dict[str, Any]:
+    def serialize_chain(self, chain: TextChain) -> dict[str, Any]:
         return chain.serialize()
 
     @field_validator("chain", mode="before")
@@ -42,9 +46,18 @@ class UserState(BaseModel):
         user_config = info.context.get("user_config")
 
         chain = cls.create_chain(user_config)
-        chain.deserialize(value)
+        if value is not None:
+            chain.deserialize(value)
 
         return chain
+
+    @field_validator("adblock", mode="before")
+    @classmethod
+    def deserialize_adblock(cls, value: Any, info: ValidationInfo) -> Engine:
+        assert info.context is not None
+        user_config = info.context.get("user_config")
+
+        return cls.create_adblock(user_config)
 
     @staticmethod
     def create_chain(config: UserConfig) -> TextChain:
@@ -54,13 +67,17 @@ class UserState(BaseModel):
 
         return TextChain(markov, tokenizer)
 
+    @staticmethod
+    def create_adblock(config: UserConfig) -> Engine:
+        return Engine(config.train.adblock.filter_set)
+
 
 class State(BaseModel):
-    users: Dict[str, UserState] = Field(default_factory=dict)
+    users: dict[str, UserState] = Field(default_factory=dict)
 
     @field_validator("users", mode="before")
     @classmethod
-    def deserialize_users(cls, value: Any, info: ValidationInfo) -> Any:
+    def deserialize_users(cls, value: Any, info: ValidationInfo) -> dict[str, UserState]:
         assert info.context is not None
         config = info.context.get("config")
 

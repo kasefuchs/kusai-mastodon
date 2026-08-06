@@ -2,6 +2,7 @@ from typing import Optional
 
 from bs4 import BeautifulSoup
 from kusai import TextChain
+from adblock import Engine
 
 from kusai_mastodon.model.enum import Marker
 from kusai_mastodon.model.config import GenerateConfig
@@ -15,11 +16,16 @@ def unwrap_chain_text(text: str) -> str:
     return text.lstrip(Marker.STX.value).rstrip(Marker.ETX.value).strip()
 
 
-def sanitize_status_content(content: str) -> str:
+def sanitize_status_content(content: str, adblock: Engine) -> str:
     soup = BeautifulSoup(content, "html.parser")
 
-    for tag in soup.find_all(class_="gts-system-message"):
-        tag.decompose()
+    ids = {str(tag.id) for tag in soup.find_all(id=True) if tag.get("id")}
+    classes = {c for tag in soup.find_all(class_=True) for c in tag.get_attribute_list("class") if c}
+
+    selectors = adblock.hidden_class_id_selectors(list(classes), list(ids), set())
+    for selector in selectors:
+        for element in soup.select(selector):
+            element.decompose()
 
     for a in soup.find_all("a"):
         classes = a.get("class") or []

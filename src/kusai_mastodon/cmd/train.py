@@ -1,7 +1,6 @@
-from typing import List
-
 import typer
 from mastodon.return_types import Status
+from adblock import Engine
 from rich.progress import Progress
 
 from kusai_mastodon.util import (
@@ -13,8 +12,8 @@ from kusai_mastodon.util import (
 app = typer.Typer()
 
 
-def _encode_statuses(statuses: List[Status]) -> List[str]:
-    contents = [sanitize_status_content(i.content) for i in statuses]
+def _encode_statuses(statuses: list[Status], adblock: Engine) -> list[str]:
+    contents = [sanitize_status_content(i.content, adblock) for i in statuses]
     return [wrap_chain_text(i) for i in filter(None, contents)]
 
 
@@ -37,7 +36,7 @@ def train(ctx: typer.Context):
                     if statuses:
                         user_state.progress.since_id = statuses[0].id
                         user_state.progress.max_id = statuses[-1].id
-                        user_state.chain.train(_encode_statuses(statuses))
+                        user_state.chain.train(_encode_statuses(statuses, user_state.adblock))
 
                         progress.update(task, advance=len(statuses))
 
@@ -53,7 +52,7 @@ def train(ctx: typer.Context):
                             break
 
                         user_state.progress.since_id = statuses[0].id
-                        user_state.chain.train(_encode_statuses(statuses))
+                        user_state.chain.train(_encode_statuses(statuses, user_state.adblock))
 
                         progress.update(task, advance=len(statuses))
 
@@ -69,7 +68,7 @@ def train(ctx: typer.Context):
                             break
 
                         user_state.progress.max_id = statuses[-1].id
-                        user_state.chain.train(_encode_statuses(statuses))
+                        user_state.chain.train(_encode_statuses(statuses, user_state.adblock))
 
                         progress.update(task, advance=len(statuses))
 

@@ -35,10 +35,17 @@ class Context:
         return cls(config, state)
 
     def save(self):
-        fd, path = mkstemp()
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(self.state.model_dump(), f)
-            f.flush()
-            os.fsync(f.fileno())
+        state_path = os.path.abspath(self.config.state_path)
+        state_dir = os.path.dirname(state_path)
 
-        os.replace(path, self.config.state_path)
+        fd, path = mkstemp(dir=state_dir)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(self.state.model_dump(), f)
+                f.flush()
+                os.fsync(f.fileno())
+
+            os.replace(path, self.config.state_path)
+        except Exception as e:
+            os.unlink(path)
+            raise e

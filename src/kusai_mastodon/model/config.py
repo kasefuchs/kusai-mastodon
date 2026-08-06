@@ -1,6 +1,8 @@
+from functools import cached_property
 from pathlib import Path
-from typing import Dict, List
+from adblock.adblock import FilterSet
 from pydantic import BaseModel, Field
+import adblock
 
 
 class GenerateConfig(BaseModel):
@@ -19,18 +21,30 @@ class TextChainConfig(BaseModel):
     max_context_size: int = 2
 
 
+class AdblockConfig(BaseModel):
+    format: str = "standard"
+    filters: list[str] = Field(default_factory=list)
+
+    @cached_property
+    def filter_set(self):
+        fs = FilterSet()
+        fs.add_filters(self.filters, self.format)
+        return fs
+
+
 class TrainConfig(BaseModel):
     source: str = ""
     exclude_replies: bool = True
     exclude_reblogs: bool = True
     chain: TextChainConfig = Field(default_factory=TextChainConfig)
+    adblock: AdblockConfig = Field(default_factory=AdblockConfig)
 
 
 class InstanceConfig(BaseModel):
     api_url: str = ""
     client_id: str = ""
     client_secret: str = ""
-    scopes: List[str] = Field(default_factory=list)
+    scopes: list[str] = Field(default_factory=list)
 
 
 class UserConfig(BaseModel):
@@ -41,5 +55,5 @@ class UserConfig(BaseModel):
 
 
 class Config(BaseModel):
-    users: Dict[str, UserConfig] = Field(default_factory=dict)
+    users: dict[str, UserConfig] = Field(default_factory=dict)
     state_path: Path = Field(default=Path("state.json"))
