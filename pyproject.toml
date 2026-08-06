@@ -14,6 +14,9 @@ dependencies = [
     "typer>=0.24.1",
 ]
 
+[project.urls]
+Homepage = "https://codeberg.org/kasefuchs/extra/src/branch/main/projects/kusai-mastodon"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

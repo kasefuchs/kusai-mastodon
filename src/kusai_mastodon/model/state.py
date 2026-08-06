@@ -22,9 +22,9 @@ class ProgressState(BaseModel):
 
 
 class InstanceState(BaseModel):
-    access_token: str = ""
     client_id: str = ""
     client_secret: str = ""
+    access_token: str = ""
 
 
 class UserState(BaseModel):
@@ -53,7 +53,7 @@ class UserState(BaseModel):
 
     @field_validator("adblock", mode="before")
     @classmethod
-    def deserialize_adblock(cls, value: Any, info: ValidationInfo) -> Engine:
+    def deserialize_adblock(cls, _: Any, info: ValidationInfo) -> Engine:
         assert info.context is not None
         user_config = info.context.get("user_config")
 
@@ -73,7 +73,7 @@ class UserState(BaseModel):
 
 
 class State(BaseModel):
-    users: dict[str, UserState] = Field(default_factory=dict)
+    users: dict[str, UserState] = Field(default_factory=dict, validate_default=True)
 
     @field_validator("users", mode="before")
     @classmethod

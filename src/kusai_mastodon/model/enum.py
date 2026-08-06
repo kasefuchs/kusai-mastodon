@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class Marker(Enum):
+class Marker(StrEnum):
     STX = "\ue002"
     ETX = "\ue003"

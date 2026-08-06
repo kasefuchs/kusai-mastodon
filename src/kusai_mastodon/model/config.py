@@ -2,7 +2,6 @@ from functools import cached_property
 from pathlib import Path
 from adblock.adblock import FilterSet
 from pydantic import BaseModel, Field
-import adblock
 
 
 class GenerateConfig(BaseModel):
@@ -42,8 +41,10 @@ class TrainConfig(BaseModel):
 
 class InstanceConfig(BaseModel):
     api_url: str = ""
+    app_name: str = "kusai-mastodon"
     client_id: str = ""
     client_secret: str = ""
+    access_token: str = ""
     scopes: list[str] = Field(default_factory=list)
 
 
@@ -56,4 +57,4 @@ class UserConfig(BaseModel):
 
 class Config(BaseModel):
     users: dict[str, UserConfig] = Field(default_factory=dict)
-    state_path: Path = Field(default=Path("state.json"))
+    state_path: Path = Path("state.json")
