@@ -21,7 +21,7 @@ class Context:
         with open(config_path, "r", encoding="utf-8") as f:
             config_data = yaml.safe_load(f) or {}
 
-        config = Config.model_validate(config_data)
+        config = Config(**config_data)
 
         state_data = {}
         try:

@@ -1,6 +1,6 @@
 [project]
 name = "kusai-mastodon"
-version = "0.3.0"
+version = "0.3.1"
 requires-python = ">=3.12"
 
 dependencies = [
@@ -9,6 +9,7 @@ dependencies = [
     "kusai>=0.12.2",
     "mastodon-py>=2.1.4",
     "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
     "pyyaml>=6.0.3",
     "rich>=14.3.3",
     "typer>=0.24.1",

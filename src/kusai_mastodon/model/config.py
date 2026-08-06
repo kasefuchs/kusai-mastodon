@@ -2,6 +2,7 @@ from functools import cached_property
 from pathlib import Path
 from adblock.adblock import FilterSet
 from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
 
 class GenerateConfig(BaseModel):
@@ -55,6 +56,23 @@ class UserConfig(BaseModel):
     instance: InstanceConfig = Field(default_factory=InstanceConfig)
 
 
-class Config(BaseModel):
+class Config(BaseSettings):
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        env_prefix="KUSAI_MASTODON_",
+        env_nested_delimiter="__",
+    )
+
     users: dict[str, UserConfig] = Field(default_factory=dict)
     state_path: Path = Path("state.json")
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return env_settings, init_settings, file_secret_settings

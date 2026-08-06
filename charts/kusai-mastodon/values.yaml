@@ -1,0 +1,80 @@
+global:
+  alwaysAppendIdentifierToResourceName: true
+x-pod: &pod
+  securityContext:
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+x-container: &container
+  image:
+    repository: codeberg.org/kasefuchs/extra/kusai-mastodon
+    tag:
+  env:
+    KUSAI_MASTODON_STATE_PATH: /app/data/state.json
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+controllers:
+  post:
+    type: cronjob
+    cronjob:
+      schedule: "0 * * * *"
+      successfulJobsHistory: 1
+      failedJobsHistory: 3
+    pod: *pod
+    containers:
+      main:
+        !!merge <<: *container
+        args: ["--config-path", "/app/config/config.yaml", "post"]
+  reply:
+    type: cronjob
+    cronjob:
+      schedule: "*/10 * * * *"
+      successfulJobsHistory: 1
+      failedJobsHistory: 3
+    pod: *pod
+    containers:
+      main:
+        !!merge <<: *container
+        args: ["--config-path", "/app/config/config.yaml", "reply"]
+  train:
+    type: cronjob
+    cronjob:
+      schedule: "0 3 * * *"
+      successfulJobsHistory: 1
+      failedJobsHistory: 3
+    pod: *pod
+    containers:
+      main:
+        !!merge <<: *container
+        args: ["--config-path", "/app/config/config.yaml", "train"]
+configMaps:
+  config:
+    data:
+      config.yaml: |-
+        {{- with .Values.config }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+persistence:
+  tmp:
+    type: emptyDir
+    globalMounts:
+      - path: /tmp/
+  config:
+    type: configMap
+    identifier: config
+    globalMounts:
+      - path: /app/config/
+  data:
+    type: persistentVolumeClaim
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    globalMounts:
+      - path: /app/data/
+config: {}
