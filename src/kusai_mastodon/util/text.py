@@ -2,6 +2,7 @@ from typing import Optional
 
 from bs4 import BeautifulSoup
 from kusai import TextChain
+from mastodon.return_types import Status
 from adblock import Engine
 
 from kusai_mastodon.model.enum import Marker
@@ -38,6 +39,11 @@ def sanitize_status_content(content: str, adblock: Engine) -> str:
                 a.replace_with(href)
 
     return soup.get_text(separator=" ", strip=True)
+
+
+def encode_statuses(statuses: list[Status], adblock: Engine) -> list[str]:
+    contents = [sanitize_status_content(i.content, adblock) for i in statuses]
+    return [wrap_chain_text(i) for i in filter(None, contents)]
 
 
 def generate_status_content(textchain: TextChain, config: GenerateConfig) -> Optional[str]:

@@ -21,18 +21,11 @@ class ProgressState(BaseModel):
     last_reply_id: Optional[IdType] = None
 
 
-class InstanceState(BaseModel):
-    client_id: str = ""
-    client_secret: str = ""
-    access_token: str = ""
-
-
 class UserState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     chain: TextChain = Field(default=None, validate_default=True)
     adblock: Engine = Field(default=None, exclude=True, validate_default=True)
-    instance: InstanceState = Field(default_factory=InstanceState)
     progress: ProgressState = Field(default_factory=ProgressState)
 
     @field_serializer("chain")

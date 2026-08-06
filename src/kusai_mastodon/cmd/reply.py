@@ -1,6 +1,6 @@
 import typer
 
-from kusai_mastodon.util import create_mastodon_client, generate_status_content
+from kusai_mastodon.util import generate_status_content
 
 app = typer.Typer()
 
@@ -12,7 +12,7 @@ def reply(ctx: typer.Context, dry_run: bool = False):
             typer.secho(f"Replying as user: {name}", fg=typer.colors.CYAN, bold=True)
 
             user_state = ctx.obj.state.users[name]
-            client = create_mastodon_client(user_config.instance, user_state.instance)
+            client = user_config.instance.client
 
             notifications = client.notifications(
                 types=["mention"],

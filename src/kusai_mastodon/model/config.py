@@ -3,6 +3,7 @@ from pathlib import Path
 from adblock.adblock import FilterSet
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from mastodon import Mastodon
 
 
 class GenerateConfig(BaseModel):
@@ -42,11 +43,14 @@ class TrainConfig(BaseModel):
 
 class InstanceConfig(BaseModel):
     api_url: str = ""
-    app_name: str = "kusai-mastodon"
-    client_id: str = ""
-    client_secret: str = ""
     access_token: str = ""
-    scopes: list[str] = Field(default_factory=list)
+
+    @cached_property
+    def client(self):
+        return Mastodon(
+            api_base_url=self.api_url,
+            access_token=self.access_token,
+        )
 
 
 class UserConfig(BaseModel):
