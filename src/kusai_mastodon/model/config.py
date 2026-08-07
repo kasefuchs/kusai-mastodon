@@ -4,6 +4,10 @@ from adblock.adblock import FilterSet
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 from mastodon import Mastodon
+from mastodon.return_types import Status
+from kusai import TextChain
+
+from .enum import Marker
 
 
 class GenerateConfig(BaseModel):
@@ -11,6 +15,14 @@ class GenerateConfig(BaseModel):
     retries: int = 100
     min_words: int = 2
     max_words: int = 20
+
+    def __call__(self, chain: TextChain) -> str | None:
+        for _ in range(self.retries):
+            candidate = Marker.unwrap(chain.generate_text(Marker.STX, limit=self.limit))
+            if self.min_words <= len(candidate.split()) <= self.max_words:
+                return candidate
+
+        return None
 
 
 class StatusConfig(BaseModel):
@@ -33,12 +45,24 @@ class AdblockConfig(BaseModel):
         return fs
 
 
+class ExcludeConfig(BaseModel):
+    replies: bool = True
+    reblogs: bool = True
+    sensitive: bool = True
+
+    def __call__(self, status: Status) -> bool:
+        return bool(
+            (self.reblogs and status.reblog)
+            or (self.replies and status.in_reply_to_id)
+            or (self.sensitive and status.sensitive)
+        )
+
+
 class TrainConfig(BaseModel):
     source: str = ""
-    exclude_replies: bool = True
-    exclude_reblogs: bool = True
     chain: TextChainConfig = Field(default_factory=TextChainConfig)
     adblock: AdblockConfig = Field(default_factory=AdblockConfig)
+    exclude: ExcludeConfig = Field(default_factory=ExcludeConfig)
 
 
 class InstanceConfig(BaseModel):

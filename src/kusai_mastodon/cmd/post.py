@@ -1,7 +1,5 @@
 import typer
 
-from kusai_mastodon.util import generate_status_content
-
 app = typer.Typer()
 
 
@@ -13,7 +11,7 @@ def post(ctx: typer.Context, dry_run: bool = False):
         user_state = ctx.obj.state.users[name]
         client = user_config.instance.client
 
-        content = generate_status_content(user_state.chain, user_config.post.generate)
+        content = user_config.post.generate(user_state.chain)
         if content:
             typer.secho(f"Generated content: {content}", fg=typer.colors.BLUE)
             if not dry_run:

@@ -1,20 +1,18 @@
-from typing import Optional
-
 from bs4 import BeautifulSoup
-from kusai import TextChain
 from mastodon.return_types import Status
 from adblock import Engine
 
 from kusai_mastodon.model.enum import Marker
-from kusai_mastodon.model.config import GenerateConfig
+from kusai_mastodon.model.config import ExcludeConfig
 
 
-def wrap_chain_text(text: str) -> str:
-    return f"{Marker.STX.value} {text.strip()} {Marker.ETX.value}"
+def encode_statuses(statuses: list[Status], adblock: Engine) -> list[str]:
+    contents = [sanitize_status_content(i.content, adblock) for i in statuses]
+    return [Marker.wrap(i) for i in filter(None, contents)]
 
 
-def unwrap_chain_text(text: str) -> str:
-    return text.lstrip(Marker.STX.value).rstrip(Marker.ETX.value).strip()
+def filter_statuses(statuses: list[Status], exclude: ExcludeConfig) -> list[Status]:
+    return [s for s in statuses if not exclude(s)]
 
 
 def sanitize_status_content(content: str, adblock: Engine) -> str:
@@ -39,17 +37,3 @@ def sanitize_status_content(content: str, adblock: Engine) -> str:
                 a.replace_with(href)
 
     return soup.get_text(separator=" ", strip=True)
-
-
-def encode_statuses(statuses: list[Status], adblock: Engine) -> list[str]:
-    contents = [sanitize_status_content(i.content, adblock) for i in statuses]
-    return [wrap_chain_text(i) for i in filter(None, contents)]
-
-
-def generate_status_content(textchain: TextChain, config: GenerateConfig) -> Optional[str]:
-    for _ in range(config.retries):
-        candidate = unwrap_chain_text(textchain.generate_text(Marker.STX.value, limit=config.limit))
-        if config.min_words <= len(candidate.split()) <= config.max_words:
-            return candidate
-
-    return None

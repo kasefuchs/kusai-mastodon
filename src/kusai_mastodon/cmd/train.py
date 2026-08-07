@@ -1,5 +1,5 @@
 import typer
-from kusai_mastodon.util import encode_statuses
+from kusai_mastodon.util import encode_statuses, filter_statuses
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, MofNCompleteColumn, TimeRemainingColumn
 
 from kusai_mastodon.util import encode_statuses
@@ -31,12 +31,13 @@ def train(ctx: typer.Context):
                 def step(**kwargs):
                     statuses = client.account_statuses(
                         account,
-                        exclude_reblogs=user_config.train.exclude_reblogs,
-                        exclude_replies=user_config.train.exclude_replies,
+                        exclude_reblogs=user_config.train.exclude.reblogs,
+                        exclude_replies=user_config.train.exclude.replies,
                         **kwargs,
                     )
                     if statuses:
-                        user_state.chain.train(encode_statuses(statuses, user_state.adblock))
+                        if train_statuses := filter_statuses(statuses, user_config.train.exclude):
+                            user_state.chain.train(encode_statuses(train_statuses, user_state.adblock))
 
                         batch_size = len(statuses)
                         user_state.progress.count += batch_size

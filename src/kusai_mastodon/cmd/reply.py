@@ -1,7 +1,5 @@
 import typer
 
-from kusai_mastodon.util import generate_status_content
-
 app = typer.Typer()
 
 
@@ -21,7 +19,7 @@ def reply(ctx: typer.Context, dry_run: bool = False):
             )
 
             for notification in reversed(notifications):
-                if not notification.status:
+                if not notification.status or notification.account.bot:
                     continue
 
                 typer.secho(
@@ -29,24 +27,21 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                     fg=typer.colors.MAGENTA,
                 )
 
-                if notification.account.bot:
-                    typer.secho("Skipping bot", fg=typer.colors.YELLOW)
+                content = user_config.reply.generate(user_state.chain)
+                if content:
+                    text = f"@{notification.account.acct} {content}"
+                    typer.secho(f"Generated reply: {text}", fg=typer.colors.BLUE)
+
+                    if not dry_run:
+                        reply_status = client.status_post(
+                            status=text,
+                            in_reply_to_id=notification.status.id,
+                            visibility=user_config.reply.visibility,
+                        )
+
+                        typer.secho(f"Successfully replied: {reply_status.url}", fg=typer.colors.GREEN)
                 else:
-                    content = generate_status_content(user_state.chain, user_config.reply.generate)
-                    if content:
-                        text = f"@{notification.account.acct} {content}"
-                        typer.secho(f"Generated reply: {text}", fg=typer.colors.BLUE)
-
-                        if not dry_run:
-                            reply_status = client.status_post(
-                                status=text,
-                                in_reply_to_id=notification.status.id,
-                                visibility=user_config.reply.visibility,
-                            )
-
-                            typer.secho(f"Successfully replied: {reply_status.url}", fg=typer.colors.GREEN)
-                    else:
-                        typer.secho(f"Failed to generate reply content", fg=typer.colors.RED)
+                    typer.secho(f"Failed to generate reply content", fg=typer.colors.RED)
 
                 if not dry_run:
                     user_state.progress.last_reply_id = notification.id
