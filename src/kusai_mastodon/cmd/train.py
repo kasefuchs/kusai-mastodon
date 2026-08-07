@@ -1,3 +1,5 @@
+from typing import cast
+
 import typer
 from rich.progress import (
     BarColumn,
@@ -8,6 +10,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
+from kusai_mastodon.model import Context
 from kusai_mastodon.util import encode_statuses, filter_statuses
 
 app = typer.Typer()
@@ -15,6 +18,8 @@ app = typer.Typer()
 
 @app.command()
 def train(ctx: typer.Context):
+    context = cast(Context, ctx.obj)
+
     with Progress(
         TextColumn("[bold blue]{task.description}"),
         BarColumn(),
@@ -23,8 +28,8 @@ def train(ctx: typer.Context):
         TimeRemainingColumn(),
     ) as progress:
         try:
-            for name, user_config in ctx.obj.config.users.items():
-                user_state = ctx.obj.state.users[name]
+            for name, user_config in context.config.users.items():
+                user_state = context.state.users[name]
                 client = user_config.instance.client
                 account = client.account_lookup(user_config.train.source)
 
@@ -72,4 +77,4 @@ def train(ctx: typer.Context):
                 progress.update(task, completed=True)
 
         finally:
-            ctx.obj.save()
+            context.save()

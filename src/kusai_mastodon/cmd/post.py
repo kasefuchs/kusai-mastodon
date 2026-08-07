@@ -1,14 +1,20 @@
+from typing import cast
+
 import typer
+
+from kusai_mastodon.model import Context
 
 app = typer.Typer()
 
 
 @app.command()
 def post(ctx: typer.Context, dry_run: bool = False):
-    for name, user_config in ctx.obj.config.users.items():
+    context = cast(Context, ctx.obj)
+
+    for name, user_config in context.config.users.items():
         typer.secho(f"Posting for user: {name}", fg=typer.colors.CYAN, bold=True)
 
-        user_state = ctx.obj.state.users[name]
+        user_state = context.state.users[name]
         client = user_config.instance.client
 
         content = user_config.post.generate(user_state.chain)

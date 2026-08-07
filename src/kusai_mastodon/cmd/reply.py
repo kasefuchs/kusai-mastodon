@@ -1,15 +1,21 @@
+from typing import cast
+
 import typer
+
+from kusai_mastodon.model import Context
 
 app = typer.Typer()
 
 
 @app.command()
 def reply(ctx: typer.Context, dry_run: bool = False):
+    context = cast(Context, ctx.obj)
+
     try:
-        for name, user_config in ctx.obj.config.users.items():
+        for name, user_config in context.config.users.items():
             typer.secho(f"Replying as user: {name}", fg=typer.colors.CYAN, bold=True)
 
-            user_state = ctx.obj.state.users[name]
+            user_state = context.state.users[name]
             client = user_config.instance.client
 
             notifications = client.notifications(
@@ -49,4 +55,4 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                 if not dry_run:
                     user_state.progress.last_reply_id = notification.id
     finally:
-        ctx.obj.save()
+        context.save()

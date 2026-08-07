@@ -54,12 +54,18 @@ class ExcludeConfig(BaseModel):
     replies: bool = True
     reblogs: bool = True
     sensitive: bool = True
+    mentions: bool = True
+    tags: bool = True
+    media: bool = True
 
     def __call__(self, status: Status) -> bool:
         return bool(
             (self.reblogs and status.reblog)
             or (self.replies and status.in_reply_to_id)
             or (self.sensitive and status.sensitive)
+            or (self.mentions and status.mentions)
+            or (self.tags and status.tags)
+            or (self.media and status.media_attachments)
         )
 
 
