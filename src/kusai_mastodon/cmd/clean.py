@@ -1,6 +1,6 @@
 import typer
 
-from kusai_mastodon.model.state import UserState
+from kusai_mastodon.model.state import UserState, ProgressState
 
 app = typer.Typer()
 
@@ -19,8 +19,6 @@ def clean(ctx: typer.Context, force: bool = False, reset_progress: bool = True):
 
         user_state.chain = UserState.create_chain(user_config)
         if reset_progress:
-            user_state.progress.since_id = None
-            user_state.progress.max_id = None
-            user_state.progress.last_reply_id = None
+            user_state.progress = ProgressState()
 
     ctx.obj.save()

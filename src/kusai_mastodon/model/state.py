@@ -16,6 +16,7 @@ from .config import UserConfig
 class ProgressState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    count: int = 0
     max_id: Optional[IdType] = None
     since_id: Optional[IdType] = None
     last_reply_id: Optional[IdType] = None
