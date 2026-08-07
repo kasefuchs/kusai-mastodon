@@ -1,11 +1,16 @@
 from functools import cached_property
 from pathlib import Path
+
 from adblock.adblock import FilterSet
-from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from kusai import TextChain
 from mastodon import Mastodon
 from mastodon.return_types import Status
-from kusai import TextChain
+from pydantic import BaseModel, Field
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 from .enum import Marker
 

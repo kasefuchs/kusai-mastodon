@@ -1,6 +1,6 @@
 import typer
 
-from kusai_mastodon.model.state import UserState, ProgressState
+from kusai_mastodon.model.state import ProgressState, UserState
 
 app = typer.Typer()
 
@@ -9,7 +9,11 @@ app = typer.Typer()
 def clean(ctx: typer.Context, force: bool = False, reset_progress: bool = True):
     for name, user_config in ctx.obj.config.users.items():
         if not force:
-            confirm = typer.confirm(typer.style(f"Clear training data for user: {name}?", fg=typer.colors.YELLOW))
+            confirm = typer.confirm(
+                typer.style(
+                    f"Clear training data for user: {name}?", fg=typer.colors.YELLOW
+                )
+            )
             if not confirm:
                 typer.echo(f"Skipping user: {name}")
                 continue

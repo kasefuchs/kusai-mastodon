@@ -1,10 +1,10 @@
 import json
+import os
 from dataclasses import dataclass
-from typing import Self
 from pathlib import Path
 from tempfile import mkstemp
+from typing import Self
 
-import os
 import yaml
 
 from .config import Config

@@ -1,7 +1,7 @@
 from .status import (
-    sanitize_status_content,
     encode_statuses,
     filter_statuses,
+    sanitize_status_content,
 )
 
 __all__ = (

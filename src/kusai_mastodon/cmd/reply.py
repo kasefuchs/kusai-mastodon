@@ -39,9 +39,12 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                             visibility=user_config.reply.visibility,
                         )
 
-                        typer.secho(f"Successfully replied: {reply_status.url}", fg=typer.colors.GREEN)
+                        typer.secho(
+                            f"Successfully replied: {reply_status.url}",
+                            fg=typer.colors.GREEN,
+                        )
                 else:
-                    typer.secho(f"Failed to generate reply content", fg=typer.colors.RED)
+                    typer.secho("Failed to generate reply content", fg=typer.colors.RED)
 
                 if not dry_run:
                     user_state.progress.last_reply_id = notification.id

@@ -1,13 +1,20 @@
-from typing import Optional, Any
-from adblock import Engine
-from pydantic import BaseModel, Field, ConfigDict, field_serializer, field_validator, ValidationInfo
-from mastodon.types_base import IdType
+from typing import Any, Optional
 
+from adblock import Engine
 from kusai import (
-    SimpleTokenizer,
     BackoffMarkov,
     MemoryGraph,
+    SimpleTokenizer,
     TextChain,
+)
+from mastodon.types_base import IdType
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_serializer,
+    field_validator,
 )
 
 from .config import UserConfig
@@ -56,7 +63,9 @@ class UserState(BaseModel):
     @staticmethod
     def create_chain(config: UserConfig) -> TextChain:
         graph = MemoryGraph()
-        markov = BackoffMarkov(graph, max_context_size=config.train.chain.max_context_size)
+        markov = BackoffMarkov(
+            graph, max_context_size=config.train.chain.max_context_size
+        )
         tokenizer = SimpleTokenizer()
 
         return TextChain(markov, tokenizer)
@@ -71,13 +80,17 @@ class State(BaseModel):
 
     @field_validator("users", mode="before")
     @classmethod
-    def deserialize_users(cls, value: Any, info: ValidationInfo) -> dict[str, UserState]:
+    def deserialize_users(
+        cls, value: Any, info: ValidationInfo
+    ) -> dict[str, UserState]:
         assert info.context is not None
         config = info.context.get("config")
 
         users = {}
         for name, user_config in config.users.items():
             state = value.get(name, {})
-            users[name] = UserState.model_validate(state, context={"user_config": user_config})
+            users[name] = UserState.model_validate(
+                state, context={"user_config": user_config}
+            )
 
         return users
