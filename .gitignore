@@ -1,2 +1,15 @@
+# Editors
+.idea/
+.vscode/
+.zed/
+.gram/
+*.iml
+
+# Python
+__pycache__/
+.venv/
+uv.lock
+
+# App
 config.yaml
 state.json
