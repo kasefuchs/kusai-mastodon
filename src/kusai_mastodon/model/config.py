@@ -57,15 +57,19 @@ class ExcludeConfig(BaseModel):
     mentions: bool = True
     tags: bool = True
     media: bool = True
+    emojis: bool = False
 
     def __call__(self, status: Status) -> bool:
-        return bool(
-            (self.reblogs and status.reblog)
-            or (self.replies and status.in_reply_to_id)
-            or (self.sensitive and status.sensitive)
-            or (self.mentions and status.mentions)
-            or (self.tags and status.tags)
-            or (self.media and status.media_attachments)
+        return any(
+            (
+                self.reblogs and status.reblog,
+                self.replies and status.in_reply_to_id,
+                self.sensitive and status.sensitive,
+                self.mentions and status.mentions,
+                self.tags and status.tags,
+                self.media and status.media_attachments,
+                self.emojis and status.emojis,
+            )
         )
 
 

@@ -7,7 +7,7 @@ from kusai_mastodon.model.enum import Marker
 
 
 def encode_statuses(statuses: list[Status], adblock: Engine) -> list[str]:
-    contents = [sanitize_status_content(i.content, adblock) for i in statuses]
+    contents = [sanitize_status_content(i, adblock) for i in statuses]
     return [Marker.wrap(i) for i in filter(None, contents)]
 
 
@@ -15,8 +15,8 @@ def filter_statuses(statuses: list[Status], exclude: ExcludeConfig) -> list[Stat
     return [s for s in statuses if not exclude(s)]
 
 
-def sanitize_status_content(content: str, adblock: Engine) -> str:
-    soup = BeautifulSoup(content, "html.parser")
+def sanitize_status_content(status: Status, adblock: Engine) -> str:
+    soup = BeautifulSoup(status.content, "html.parser")
 
     ids = {str(tag.id) for tag in soup.find_all(id=True) if tag.get("id")}
     classes = {
@@ -26,7 +26,16 @@ def sanitize_status_content(content: str, adblock: Engine) -> str:
         if c
     }
 
-    selectors = adblock.hidden_class_id_selectors(list(classes), list(ids), set())
+    resources = adblock.url_cosmetic_resources(status.uri)
+    selectors = set(resources.hide_selectors)
+    selectors.update(
+        adblock.hidden_class_id_selectors(
+            list(classes),
+            list(ids),
+            resources.exceptions,
+        )
+    )
+
     for selector in selectors:
         for element in soup.select(selector):
             element.decompose()
