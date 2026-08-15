@@ -5,10 +5,13 @@ from pathlib import Path
 from tempfile import mkstemp
 from typing import Self
 
+import structlog
 import yaml
 
 from .config import Config
 from .state import State
+
+logger = structlog.get_logger()
 
 
 @dataclass
@@ -28,7 +31,7 @@ class Context:
             with open(config.state_path, "r", encoding="utf-8") as f:
                 state_data = json.load(f)
         except FileNotFoundError:
-            pass
+            logger.warn("State file not found", path=config.state_path)
 
         state = State.model_validate(state_data, context={"config": config})
 
@@ -46,6 +49,9 @@ class Context:
                 os.fsync(f.fileno())
 
             os.replace(path, self.config.state_path)
+            logger.debug("Saved state", path=self.config.state_path)
+
         except Exception as e:
+            logger.error("Failed to save state", path=self.config.state_path, error=e)
             os.unlink(path)
             raise e

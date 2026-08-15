@@ -1,11 +1,13 @@
 from contextlib import suppress
 from typing import cast
 
+import structlog
 import typer
 
 from kusai_mastodon.model import Context
 
 app = typer.Typer()
+logger = structlog.get_logger()
 
 
 @app.command()
@@ -14,8 +16,7 @@ def reply(ctx: typer.Context, dry_run: bool = False):
 
     try:
         for name, user_config in context.config.users.items():
-            typer.secho(f"Replying as user: {name}", fg=typer.colors.CYAN, bold=True)
-
+            log = logger.bind(user=name, dry_run=dry_run)
             user_state = context.state.users[name]
             client = user_config.instance.client
 
@@ -29,34 +30,31 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                 if not notification.status or notification.account.bot:
                     continue
 
-                typer.secho(
-                    f"Replying to {notification.account.username} (status id: {notification.status.id})",
-                    fg=typer.colors.MAGENTA,
+                reply_log = log.bind(
+                    target_account=notification.account.acct,
+                    target_status_id=notification.status.id,
+                    notification_id=notification.id,
                 )
 
                 try:
                     content = user_config.reply.generate(user_state.chain)
-                    text = f"@{notification.account.acct} {content}"
-                    typer.secho(f"Generated reply: {text}", fg=typer.colors.BLUE)
+                    reply_log.debug("Generated content", content=content)
 
                     if not dry_run:
                         reply_status = client.status_post(
-                            status=text,
+                            status=f"@{notification.account.acct} {content}",
                             in_reply_to_id=notification.status.id,
                             visibility=user_config.reply.visibility,
                         )
 
-                        typer.secho(
-                            f"Successfully replied: {reply_status.url}",
-                            fg=typer.colors.GREEN,
+                        reply_log.info(
+                            "Successfully replied",
+                            url=reply_status.url,
+                            id=reply_status.id,
                         )
 
                 except Exception as e:
-                    typer.secho(
-                        f"Failed to generate content: {e}",
-                        fg=typer.colors.RED,
-                        err=True,
-                    )
+                    reply_log.error("Failed to reply", error=e, exc_info=True)
 
                 if not dry_run:
                     user_state.progress.last_reply_id = notification.id

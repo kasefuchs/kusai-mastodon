@@ -1,6 +1,9 @@
+import logging
 from functools import cached_property
 from pathlib import Path
+from typing import Any
 
+import structlog
 from adblock.adblock import FilterSet
 from kusai import TextChain
 from mastodon import Mastodon
@@ -13,6 +16,39 @@ from pydantic_settings import (
 )
 
 from .enum import Marker
+
+
+class LogConfig(BaseModel):
+    color: bool = True
+    level: int | str = logging.INFO
+    as_json: bool = False
+
+    def model_post_init(self, _: Any) -> None:
+        level = getattr(logging, str(self.level).upper(), self.level)
+
+        shared_processors = [
+            structlog.stdlib.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.format_exc_info,
+        ]
+
+        renderer_processors = (
+            [
+                structlog.processors.EventRenamer("message"),
+                structlog.processors.dict_tracebacks,
+                structlog.processors.JSONRenderer(),
+            ]
+            if self.as_json
+            else [
+                structlog.dev.ConsoleRenderer(colors=self.color),
+            ]
+        )
+
+        structlog.configure(
+            processors=shared_processors + renderer_processors,
+            wrapper_class=structlog.make_filtering_bound_logger(level),
+            logger_factory=structlog.PrintLoggerFactory(),
+        )
 
 
 class GenerateConfig(BaseModel):
@@ -106,6 +142,7 @@ class Config(BaseSettings):
         env_nested_delimiter="__",
     )
 
+    log: LogConfig = Field(default_factory=LogConfig)
     users: dict[str, UserConfig] = Field(default_factory=dict)
     state_path: Path = Path("state.json")
 

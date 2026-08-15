@@ -1,5 +1,6 @@
 from typing import cast
 
+import structlog
 import typer
 from rich.progress import (
     BarColumn,
@@ -14,6 +15,7 @@ from kusai_mastodon.model import Context
 from kusai_mastodon.util import encode_statuses, filter_statuses
 
 app = typer.Typer()
+logger = structlog.get_logger()
 
 
 @app.command()
@@ -29,6 +31,7 @@ def train(ctx: typer.Context):
     ) as progress:
         try:
             for name, user_config in context.config.users.items():
+                log = logger.bind(user=name)
                 user_state = context.state.users[name]
                 client = user_config.instance.client
                 account = client.account_lookup(user_config.train.source)
@@ -56,6 +59,12 @@ def train(ctx: typer.Context):
 
                         batch_size = len(statuses)
                         user_state.progress.count += batch_size
+
+                        log.debug(
+                            "Fetched status batch",
+                            batch_size=batch_size,
+                            trained_size=len(train_statuses),
+                        )
                         progress.update(task, advance=batch_size)
 
                     return statuses
@@ -74,6 +83,11 @@ def train(ctx: typer.Context):
                     while statuses := step(max_id=user_state.progress.max_id):
                         user_state.progress.max_id = statuses[-1].id
 
+                log.info(
+                    "Completed training",
+                    total_statuses=account.statuses_count,
+                    trained_count=user_state.progress.count,
+                )
                 progress.update(task, completed=True)
 
         finally:
