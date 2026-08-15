@@ -17,8 +17,8 @@ def post(ctx: typer.Context, dry_run: bool = False):
         user_state = context.state.users[name]
         client = user_config.instance.client
 
-        content = user_config.post.generate(user_state.chain)
-        if content:
+        try:
+            content = user_config.post.generate(user_state.chain)
             typer.secho(f"Generated content: {content}", fg=typer.colors.BLUE)
             if not dry_run:
                 status = client.status_post(
@@ -26,5 +26,10 @@ def post(ctx: typer.Context, dry_run: bool = False):
                 )
 
                 typer.secho(f"Successfully posted: {status.url}", fg=typer.colors.GREEN)
-        else:
-            typer.secho("Failed to generate post content", fg=typer.colors.RED)
+
+        except Exception as e:
+            typer.secho(
+                f"Failed to generate content: {e}",
+                fg=typer.colors.RED,
+                err=True,
+            )

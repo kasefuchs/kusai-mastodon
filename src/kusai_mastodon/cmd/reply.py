@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import cast
 
 import typer
@@ -29,12 +30,12 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                     continue
 
                 typer.secho(
-                    f"Replying to {notification.account.username} (Status: {notification.status.id})",
+                    f"Replying to {notification.account.username} (status id: {notification.status.id})",
                     fg=typer.colors.MAGENTA,
                 )
 
-                content = user_config.reply.generate(user_state.chain)
-                if content:
+                try:
+                    content = user_config.reply.generate(user_state.chain)
                     text = f"@{notification.account.acct} {content}"
                     typer.secho(f"Generated reply: {text}", fg=typer.colors.BLUE)
 
@@ -49,10 +50,17 @@ def reply(ctx: typer.Context, dry_run: bool = False):
                             f"Successfully replied: {reply_status.url}",
                             fg=typer.colors.GREEN,
                         )
-                else:
-                    typer.secho("Failed to generate reply content", fg=typer.colors.RED)
+
+                except Exception as e:
+                    typer.secho(
+                        f"Failed to generate content: {e}",
+                        fg=typer.colors.RED,
+                        err=True,
+                    )
 
                 if not dry_run:
                     user_state.progress.last_reply_id = notification.id
+                    with suppress(Exception):
+                        client.notifications_dismiss(notification.id)
     finally:
         context.save()

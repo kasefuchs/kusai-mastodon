@@ -21,13 +21,13 @@ class GenerateConfig(BaseModel):
     min_words: int = 2
     max_words: int = 20
 
-    def __call__(self, chain: TextChain) -> str | None:
+    def __call__(self, chain: TextChain) -> str:
         for _ in range(self.retries):
             candidate = Marker.unwrap(chain.generate_text(Marker.STX, limit=self.limit))
             if self.min_words <= len(candidate.split()) <= self.max_words:
                 return candidate
 
-        return None
+        raise RuntimeError("Failed to generate valid candidate")
 
 
 class StatusConfig(BaseModel):
