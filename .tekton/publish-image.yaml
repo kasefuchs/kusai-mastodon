@@ -1,0 +1,72 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: publish-image
+  annotations:
+    pipelinesascode.tekton.dev/on-event: "[push]"
+    pipelinesascode.tekton.dev/on-target-branch: "[refs/tags/v*]"
+    pipelinesascode.tekton.dev/task: "[git-clone, kaniko]"
+spec:
+  params:
+    - name: image_name
+      value: codeberg.org/kasefuchs/kusai-mastodon
+    - name: semver_tag
+      value: "{{ cel: pac.git_tag.substring(1) }}"
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: basic-auth
+      secret:
+        secretName: "{{ git_auth_secret }}"
+    - name: dockerconfig
+      secret:
+        secretName: codeberg-docker-credentials
+  pipelineSpec:
+    params:
+      - name: image_name
+        type: string
+      - name: semver_tag
+        type: string
+    workspaces:
+      - name: source
+      - name: basic-auth
+      - name: dockerconfig
+    tasks:
+      - name: fetch-repository
+        taskRef:
+          name: git-clone
+        workspaces:
+          - name: output
+            workspace: source
+          - name: basic-auth
+            workspace: basic-auth
+        params:
+          - name: url
+            value: "{{ repo_url }}"
+          - name: revision
+            value: "{{ revision }}"
+      - name: publish-image
+        runAfter:
+          - fetch-repository
+        taskRef:
+          name: kaniko
+        workspaces:
+          - name: source
+            workspace: source
+          - name: dockerconfig
+            workspace: dockerconfig
+        params:
+          - name: IMAGE
+            value: $(params.image_name):latest
+          - name: BUILDER_IMAGE
+            value: ghcr.io/osscontainertools/kaniko:v1.28.3-alpine
+          - name: EXTRA_ARGS
+            value:
+              - --destination=$(params.image_name):$(params.semver_tag)
+              - --destination=$(params.image_name):v$(params.semver_tag)
