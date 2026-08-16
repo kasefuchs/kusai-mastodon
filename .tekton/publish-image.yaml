@@ -26,7 +26,7 @@ spec:
         secretName: "{{ git_auth_secret }}"
     - name: dockerconfig
       secret:
-        secretName: codeberg-docker-credentials
+        secretName: container-registry-credentials
   pipelineSpec:
     params:
       - name: image_name
